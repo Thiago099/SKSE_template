@@ -8,8 +8,8 @@ set(steam_mods_output true)
 # If you use CMake features from higher versions, update this to match.
 cmake_minimum_required(VERSION 3.21)
 # Set your project name. This will be the name of your SKSE .dll file.
-set(AUTHOR_NAME "Quantumyilmaz")
-set(PRODUCT_NAME "deneme")
+set(AUTHOR_NAME "YourName")
+set(PRODUCT_NAME "YourModName")
 project(${PRODUCT_NAME} VERSION 0.1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -36,31 +36,6 @@ add_custom_command(
 add_custom_target(Resource ALL DEPENDS ${RESOURCE_OUTPUT})
 
 
-# If you're not using a mod manager, you probably want the SKSE plugin to go
-# inside of your Skyrim "Data" folder.
-#
-# To do this automatically, set the `SKYRIM_FOLDER` environment variable
-# to the path of your Skyrim Special Edition folder
-if(DEFINED ENV{SKYRIM_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_FOLDER}/Data")
-    set(OUTPUT_FOLDER "$ENV{SKYRIM_FOLDER}/Data")
-endif()
-
-
-# If you're using Mod Organizer 2 or Vortex, you might want this to go inside
-# of your "mods" folder, inside of a subfolder named "<your mod>".
-#
-# To do this automatically, set the `SKYRIM_MODS_FOLDER` environment variable
-# to the path of your "mods" folder
-if(DEFINED ENV{WILDLANDER_OWRT_FOLDER} AND IS_DIRECTORY "$ENV{WILDLANDER_OWRT_FOLDER}" AND wildlander_output)
-    set(OUTPUT_FOLDER "$ENV{WILDLANDER_OWRT_FOLDER}/${PROJECT_NAME}")
-elseif(DEFINED ENV{SKYRIM_OWRT_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_OWRT_FOLDER}" AND steam_owrt_output)
-    set(OUTPUT_FOLDER "$ENV{SKYRIM_OWRT_FOLDER}/${PROJECT_NAME}")
-elseif(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}" AND steam_mods_output)
-    set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME}")
-endif()
-
-# Otherwise, you can set OUTPUT_FOLDER to any place you'd like :)
-# set(OUTPUT_FOLDER "C:/path/to/any/folder")
 
 # Drew W � 18.01.2024 02:44: Here is my CMakeLists.txt that uses FetchContent for NG
 include(FetchContent)
@@ -71,7 +46,7 @@ set(ENABLE_SKYRIM_VR ON CACHE BOOL " " FORCE)
 set(BUILD_TESTS OFF CACHE BOOL " " FORCE)
 
 #FetchContent_MakeAvailable(CommonLibNG)
-add_subdirectory("C:/Users/Quant/GitHub/CommonLibSSE-NG" ${CMAKE_CURRENT_BINARY_DIR}/_deps/clib-build)
+add_subdirectory("$ENV{CLIBNG_ROOT}" ${CMAKE_CURRENT_BINARY_DIR}/_deps/clib-build)
 get_target_property(commonlib_src_dir CommonLibSSE SOURCE_DIR)
 
 # CLIB-UTIL
@@ -98,23 +73,30 @@ add_commonlibsse_plugin(
   SOURCES ${headers} ${sources}
 )
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23) # <--- use C++23 standard
-target_precompile_headers(${PROJECT_NAME} PRIVATE src/PCH.h) # <--- PCH.h is required!
+target_precompile_headers(${PROJECT_NAME} PRIVATE include/PCH.h) # <--- PCH.h is required!
 target_include_directories(
 	${PROJECT_NAME}
 	PRIVATE
 	${CLIB_UTIL_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_BINARY_DIR}/include
+	${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+include(cmake/headerlist.cmake)
+include(cmake/sourcelist.cmake)
 
 install(TARGETS ${PROJECT_NAME}
         DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 
 
-if(DEFINED OUTPUT_FOLDER)
+
+
+function(copyOutputs TARGET_FOLDER)
     # If you specify an <OUTPUT_FOLDER> (including via environment variables)
     # then we'll copy your mod files into Skyrim or a mod manager for you!
 
     # Copy the SKSE plugin .dll files into the SKSE/Plugins/ folder
-    set(DLL_FOLDER "${OUTPUT_FOLDER}/SKSE/Plugins")
+    set(DLL_FOLDER "${TARGET_FOLDER}/SKSE/Plugins")
 
     message(STATUS "SKSE plugin output folder: ${DLL_FOLDER}")
 
@@ -135,4 +117,21 @@ if(DEFINED OUTPUT_FOLDER)
             VERBATIM
         )
     endif()
+endfunction()
+
+
+if(DEFINED ENV{SKYRIM_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_FOLDER}/Data")
+    copyOutputs("$ENV{SKYRIM_FOLDER}/Data")
+endif()
+if(DEFINED ENV{WILDLANDER_OWRT_FOLDER} AND IS_DIRECTORY "$ENV{WILDLANDER_OWRT_FOLDER}" AND wildlander_output)
+    copyOutputs("$ENV{WILDLANDER_OWRT_FOLDER}/${PROJECT_NAME}")
+endif()
+if(DEFINED ENV{SKYRIM_OWRT_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_OWRT_FOLDER}" AND steam_owrt_output)
+    copyOutputs("$ENV{SKYRIM_OWRT_FOLDER}/${PROJECT_NAME}")
+endif()
+if(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}" AND steam_mods_output)
+    copyOutputs("$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME}")
+endif()
+if(DEFINED ENV{SKYRIM_MODS_FOLDER2} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER2}" AND steam_mods_output)
+    copyOutputs("$ENV{SKYRIM_MODS_FOLDER2}/${PROJECT_NAME}")
 endif()

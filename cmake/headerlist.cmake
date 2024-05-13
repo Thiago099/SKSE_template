@@ -1,7 +1,7 @@
 set(headers ${headers}
-	src/logger.h
-	src/Utils.h
-	src/PCH.h
-	src/Settings.h
-	src/Manager.h
+	include/logger.h
+	include/Utils.h
+	include/PCH.h
+	include/Settings.h
+	include/Manager.h
 )
