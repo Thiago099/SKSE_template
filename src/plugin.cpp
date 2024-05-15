@@ -1,6 +1,4 @@
-#include "Manager.h"
-
-
+#include "Logger.h"
 
 
 void OnMessage(SKSE::MessagingInterface::Message* message) {
